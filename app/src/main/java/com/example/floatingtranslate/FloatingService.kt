@@ -216,7 +216,7 @@ class FloatingService : Service() {
         NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Floating Translate aktif")
             .setContentText("Ketuk bubble TR untuk menerjemahkan")
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(android.R.drawable.ic_menu_translate)
             .setOngoing(true)
             .build()
 
