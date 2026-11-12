@@ -51,6 +51,8 @@ class ScreenTranslateService : Service() {
     private var recognizer: TextRecognizer? = null
     private var translator: Translator? = null
     private var busy = false
+    private var emptyStreak = 0
+    private val cache = HashMap<String, String>()
     private var screenWidth = 0
     private var screenHeight = 0
     private var screenDpi = 0
@@ -237,38 +239,66 @@ class ScreenTranslateService : Service() {
         }
         rec.process(InputImage.fromBitmap(bitmap, 0))
             .addOnSuccessListener { result ->
-                val blocks = result.textBlocks.mapNotNull { b ->
-                    val box = b.boundingBox
-                    if (box != null && b.text.isNotBlank()) Pair(Rect(box), b.text) else null
-                }
-                translateBlocks(blocks)
+                val lines = result.textBlocks
+                    .flatMap { it.lines }
+                    .mapNotNull { line ->
+                        val box = line.boundingBox
+                        if (box != null && line.text.isNotBlank()) Pair(Rect(box), line.text) else null
+                    }
+                translateLines(lines)
             }
             .addOnFailureListener { busy = false }
     }
 
-    private fun translateBlocks(blocks: List<Pair<Rect, String>>) {
+    private fun translateLines(lines: List<Pair<Rect, String>>) {
         val t = translator
-        if (t == null || blocks.isEmpty()) {
-            overlay?.setItems(emptyList())
+        if (t == null) {
             busy = false
             return
         }
-        val results = MutableList(blocks.size) { "" }
-        var remaining = blocks.size
-        blocks.forEachIndexed { i, block ->
-            t.translate(block.second)
-                .addOnSuccessListener { results[i] = it }
-                .addOnFailureListener { results[i] = block.second }
+        if (lines.isEmpty()) {
+            emptyStreak++
+            if (emptyStreak >= EMPTY_FRAMES_TO_CLEAR) overlay?.setItems(emptyList())
+            busy = false
+            return
+        }
+        emptyStreak = 0
+
+        val results = MutableList(lines.size) { "" }
+        val pending = mutableListOf<Int>()
+        lines.forEachIndexed { i, line ->
+            val cached = cache[line.second]
+            if (cached != null) {
+                results[i] = cached
+            } else {
+                pending.add(i)
+            }
+        }
+        if (pending.isEmpty()) {
+            publish(lines, results)
+            return
+        }
+
+        var remaining = pending.size
+        for (i in pending) {
+            val original = lines[i].second
+            t.translate(original)
+                .addOnSuccessListener { translated ->
+                    results[i] = translated
+                    if (cache.size > CACHE_LIMIT) cache.clear()
+                    cache[original] = translated
+                }
+                .addOnFailureListener { results[i] = original }
                 .addOnCompleteListener {
                     remaining--
-                    if (remaining == 0) {
-                        overlay?.setItems(
-                            blocks.mapIndexed { j, b -> OverlayView.Item(b.first, results[j]) }
-                        )
-                        busy = false
-                    }
+                    if (remaining == 0) publish(lines, results)
                 }
         }
+    }
+
+    private fun publish(lines: List<Pair<Rect, String>>, results: List<String>) {
+        overlay?.setItems(lines.mapIndexed { j, line -> OverlayView.Item(line.first, results[j]) })
+        busy = false
     }
 
     private fun createChannel() {
@@ -304,5 +334,7 @@ class ScreenTranslateService : Service() {
         private const val NOTIF_ID = 2
         private const val CAPTURE_INTERVAL_MS = 1500L
         private const val HIDE_DELAY_MS = 150L
+        private const val EMPTY_FRAMES_TO_CLEAR = 4
+        private const val CACHE_LIMIT = 1000
     }
 }
