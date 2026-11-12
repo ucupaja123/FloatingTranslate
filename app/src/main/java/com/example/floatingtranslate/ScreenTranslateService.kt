@@ -302,7 +302,7 @@ class ScreenTranslateService : Service() {
         private const val ACTION_STOP = "com.example.floatingtranslate.STOP_SCREEN"
         private const val CHANNEL_ID = "screen_translate"
         private const val NOTIF_ID = 2
-        private const val CAPTURE_INTERVAL_MS = 2500L
+        private const val CAPTURE_INTERVAL_MS = 1500L
         private const val HIDE_DELAY_MS = 150L
     }
 }

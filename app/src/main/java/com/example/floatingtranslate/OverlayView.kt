@@ -14,7 +14,7 @@ class OverlayView(context: Context) : View(context) {
     data class Item(val rect: Rect, val text: String)
 
     private var items: List<Item> = emptyList()
-    private val bgPaint = Paint().apply { color = Color.argb(230, 255, 255, 255) }
+    private val bgPaint = Paint().apply { color = Color.argb(245, 255, 255, 255) }
     private val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.BLACK }
 
     fun setItems(newItems: List<Item>) {
@@ -25,16 +25,25 @@ class OverlayView(context: Context) : View(context) {
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         for (item in items) {
-            canvas.drawRect(item.rect, bgPaint)
-            val width = maxOf(1, item.rect.width())
-            var size = maxOf(12f, item.rect.height() * 0.8f)
+            val padX = maxOf(4, (item.rect.height() * 0.15f).toInt())
+            val padY = maxOf(4, (item.rect.height() * 0.2f).toInt())
+            val box = Rect(
+                item.rect.left - padX,
+                item.rect.top - padY,
+                item.rect.right + padX,
+                item.rect.bottom + padY
+            )
+            canvas.drawRect(box, bgPaint)
+
+            val width = maxOf(1, box.width())
+            var size = maxOf(12f, box.height() * 0.7f)
             var layout = buildLayout(item.text, width, size)
-            while (layout.height > item.rect.height() && size > 8f) {
+            while (layout.height > box.height() && size > 8f) {
                 size -= 1f
                 layout = buildLayout(item.text, width, size)
             }
             canvas.save()
-            canvas.translate(item.rect.left.toFloat(), item.rect.top.toFloat())
+            canvas.translate(box.left.toFloat(), box.top.toFloat())
             layout.draw(canvas)
             canvas.restore()
         }
