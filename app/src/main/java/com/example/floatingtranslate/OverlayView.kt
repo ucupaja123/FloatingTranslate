@@ -23,27 +23,41 @@ class OverlayView(context: Context) : View(context) {
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+
+        // Koordinat OCR mengikuti layar penuh, sedangkan view ini bisa bergeser
+        // (misalnya karena status bar), jadi geser canvas supaya cocok.
+        val loc = IntArray(2)
+        getLocationOnScreen(loc)
+        canvas.save()
+        canvas.translate(-loc[0].toFloat(), -loc[1].toFloat())
+
+        val screenRight = (loc[0] + width - 4).toFloat()
         for (item in items) {
             val h = item.rect.height().toFloat()
             val padX = maxOf(3f, h * 0.2f)
             val padY = maxOf(2f, h * 0.12f)
-            val left = item.rect.left - padX
+            val innerLeft = item.rect.left.toFloat()
             val top = item.rect.top - padY
-            val right = item.rect.right + padX
             val bottom = item.rect.bottom + padY
-            canvas.drawRect(left, top, right, bottom, bgPaint)
 
-            val availableWidth = (right - left) - padX
-            var size = maxOf(10f, (bottom - top) * 0.72f)
+            var size = maxOf(10f, h * 0.85f)
             textPaint.textSize = size
-            val measured = textPaint.measureText(item.text)
-            if (measured > availableWidth && measured > 0f) {
-                size = maxOf(8f, size * availableWidth / measured)
+            var textWidth = textPaint.measureText(item.text)
+            val maxTextWidth = screenRight - innerLeft - padX
+            if (textWidth > maxTextWidth && textWidth > 0f) {
+                size = maxOf(8f, size * maxTextWidth / textWidth)
                 textPaint.textSize = size
+                textWidth = textPaint.measureText(item.text)
             }
+
+            val right = maxOf(item.rect.right.toFloat() + padX, innerLeft + textWidth + padX)
+            canvas.drawRect(innerLeft - padX, top, right, bottom, bgPaint)
+
             val fm = textPaint.fontMetrics
             val baseline = (top + bottom) / 2f - (fm.ascent + fm.descent) / 2f
-            canvas.drawText(item.text, left + padX / 2f, baseline, textPaint)
+            canvas.drawText(item.text, innerLeft, baseline, textPaint)
         }
+
+        canvas.restore()
     }
 }
