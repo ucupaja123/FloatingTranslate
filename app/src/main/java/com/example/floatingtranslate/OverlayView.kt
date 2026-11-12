@@ -23,6 +23,7 @@ class OverlayView(context: Context) : View(context) {
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        if (items.isEmpty()) return
 
         // Koordinat OCR mengikuti layar penuh, sedangkan view ini bisa bergeser
         // (misalnya karena status bar), jadi geser canvas supaya cocok.
@@ -31,7 +32,11 @@ class OverlayView(context: Context) : View(context) {
         canvas.save()
         canvas.translate(-loc[0].toFloat(), -loc[1].toFloat())
 
+        // Ukuran teks seragam: pakai median tinggi baris di layar.
+        val heights = items.map { it.rect.height() }.sorted()
+        val baseSize = maxOf(10f, heights[heights.size / 2] * 0.85f)
         val screenRight = (loc[0] + width - 4).toFloat()
+
         for (item in items) {
             val h = item.rect.height().toFloat()
             val padX = maxOf(3f, h * 0.2f)
@@ -40,7 +45,7 @@ class OverlayView(context: Context) : View(context) {
             val top = item.rect.top - padY
             val bottom = item.rect.bottom + padY
 
-            var size = maxOf(10f, h * 0.85f)
+            var size = baseSize
             textPaint.textSize = size
             var textWidth = textPaint.measureText(item.text)
             val maxTextWidth = screenRight - innerLeft - padX

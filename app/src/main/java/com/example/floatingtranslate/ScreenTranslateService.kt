@@ -41,6 +41,13 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 
 class ScreenTranslateService : Service() {
 
+    private class Tracked(
+        var rect: Rect,
+        var original: String,
+        var translated: String,
+        var missing: Int
+    )
+
     private val wm by lazy { getSystemService(WINDOW_SERVICE) as WindowManager }
     private val handler = Handler(Looper.getMainLooper())
 
@@ -51,8 +58,8 @@ class ScreenTranslateService : Service() {
     private var recognizer: TextRecognizer? = null
     private var translator: Translator? = null
     private var busy = false
-    private var emptyStreak = 0
     private val cache = HashMap<String, String>()
+    private val tracked = mutableListOf<Tracked>()
     private var screenWidth = 0
     private var screenHeight = 0
     private var screenDpi = 0
@@ -108,6 +115,7 @@ class ScreenTranslateService : Service() {
         recognizer = null
         translator?.close()
         translator = null
+        tracked.clear()
         super.onDestroy()
     }
 
@@ -257,12 +265,9 @@ class ScreenTranslateService : Service() {
             return
         }
         if (lines.isEmpty()) {
-            emptyStreak++
-            if (emptyStreak >= EMPTY_FRAMES_TO_CLEAR) overlay?.setItems(emptyList())
-            busy = false
+            mergeFrame(lines, emptyList())
             return
         }
-        emptyStreak = 0
 
         val results = MutableList(lines.size) { "" }
         val pending = mutableListOf<Int>()
@@ -275,7 +280,7 @@ class ScreenTranslateService : Service() {
             }
         }
         if (pending.isEmpty()) {
-            publish(lines, results)
+            mergeFrame(lines, results)
             return
         }
 
@@ -291,14 +296,52 @@ class ScreenTranslateService : Service() {
                 .addOnFailureListener { results[i] = original }
                 .addOnCompleteListener {
                     remaining--
-                    if (remaining == 0) publish(lines, results)
+                    if (remaining == 0) mergeFrame(lines, results)
                 }
         }
     }
 
-    private fun publish(lines: List<Pair<Rect, String>>, results: List<String>) {
-        overlay?.setItems(lines.mapIndexed { j, line -> OverlayView.Item(line.first, results[j]) })
+    // Gabungkan hasil frame ini dengan terjemahan yang sudah tampil,
+    // supaya baris yang sesaat tidak terbaca OCR tidak langsung hilang.
+    private fun mergeFrame(lines: List<Pair<Rect, String>>, results: List<String>) {
+        val seen = HashSet<Tracked>()
+        lines.forEachIndexed { i, (rect, original) ->
+            val translated = results.getOrElse(i) { original }
+            val match = tracked.firstOrNull { item ->
+                item !in seen && (item.original == original || overlapRatio(item.rect, rect) > 0.5f)
+            }
+            if (match != null) {
+                match.rect = rect
+                match.original = original
+                match.translated = translated
+                match.missing = 0
+                seen.add(match)
+            } else {
+                val created = Tracked(rect, original, translated, 0)
+                tracked.add(created)
+                seen.add(created)
+            }
+        }
+
+        val iterator = tracked.iterator()
+        while (iterator.hasNext()) {
+            val item = iterator.next()
+            if (item !in seen) {
+                item.missing++
+                if (item.missing > MAX_MISSING) iterator.remove()
+            }
+        }
+
+        overlay?.setItems(tracked.map { OverlayView.Item(it.rect, it.translated) })
         busy = false
+    }
+
+    private fun overlapRatio(a: Rect, b: Rect): Float {
+        val inter = Rect()
+        if (!inter.setIntersect(a, b)) return 0f
+        val interArea = inter.width().toFloat() * inter.height()
+        val minArea = minOf(a.width() * a.height(), b.width() * b.height()).toFloat()
+        return if (minArea <= 0f) 0f else interArea / minArea
     }
 
     private fun createChannel() {
@@ -332,9 +375,9 @@ class ScreenTranslateService : Service() {
         private const val ACTION_STOP = "com.example.floatingtranslate.STOP_SCREEN"
         private const val CHANNEL_ID = "screen_translate"
         private const val NOTIF_ID = 2
-        private const val CAPTURE_INTERVAL_MS = 1500L
-        private const val HIDE_DELAY_MS = 150L
-        private const val EMPTY_FRAMES_TO_CLEAR = 4
+        private const val CAPTURE_INTERVAL_MS = 2000L
+        private const val HIDE_DELAY_MS = 120L
+        private const val MAX_MISSING = 2
         private const val CACHE_LIMIT = 1000
     }
 }
