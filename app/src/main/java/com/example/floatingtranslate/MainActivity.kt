@@ -72,6 +72,10 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnStop).setOnClickListener {
             stopService(Intent(this, FloatingService::class.java))
         }
+
+        findViewById<Button>(R.id.btnFotoLive).setOnClickListener {
+            startActivity(Intent(this, FotoLiveActivity::class.java))
+        }
     }
 
     private fun startWithPermissions() {
