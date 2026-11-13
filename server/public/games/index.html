@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Game 3D · PRIMSIC</title>
+<link rel="stylesheet" href="games.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+</head>
+<body>
+<header class="gh">
+  <a class="gh-back" id="ghHome" href="/" aria-label="Kembali ke beranda PRIMSIC">&larr;</a>
+  <h1 id="ghTitle">Game 3D</h1>
+  <a class="gh-app" href="/">PRIMSIC</a>
+</header>
+
+<main id="menu" class="gmenu">
+  <p class="gmenu-note">Game 3D dibuat dengan Three.js. Ketuk game untuk mulai.</p>
+  <div id="gridGames" class="ggrid"></div>
+  <p class="gmenu-foot">Game yang butuh API luar (AI Chat, Meme, IQC, Anime, Donghua) belum ada di sini.</p>
+</main>
+
+<section id="stage" class="gstage" hidden>
+  <div id="stageBox" class="gstage-box"></div>
+</section>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

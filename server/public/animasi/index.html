@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Animasi dari video · PRIMSIC</title>
+<style>
+:root {
+  --ink: #111;
+  --paper: #fff8e7;
+  --acc: #ffd23f;
+  --bad: #ff5d73;
+  --blue: #5cc8ff;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Trebuchet MS", system-ui, sans-serif;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  padding-bottom: 32px;
+}
+header {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  background: var(--acc);
+  border-bottom: 4px solid var(--ink);
+}
+header h1 { margin: 0; flex: 1; font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: .4px; }
+header a {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 40px; height: 40px; padding: 0 12px;
+  border: 3px solid var(--ink); border-radius: 10px;
+  background: #fff; color: var(--ink); text-decoration: none; font-weight: 900; font-size: 20px;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+main { max-width: 560px; margin: 0 auto; padding: 16px; }
+.lead { margin: 4px 0 14px; font-size: 15px; line-height: 1.5; }
+.pick {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  min-height: 52px; padding: 12px;
+  border: 3px solid var(--ink); border-radius: 14px;
+  background: var(--blue); color: var(--ink);
+  font-size: 17px; font-weight: 900;
+  box-shadow: 5px 5px 0 var(--ink);
+  cursor: pointer;
+}
+.pick:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--ink); }
+.pick:focus-within { outline: 3px solid var(--ink); outline-offset: 3px; }
+.sr { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.err {
+  margin: 14px 0 0; padding: 10px 12px;
+  border: 3px solid var(--ink); border-radius: 12px;
+  background: var(--bad); font-weight: 800;
+}
+#stage { margin-top: 18px; }
+.frame {
+  position: relative; width: 100%; max-width: 300px; margin: 0 auto;
+  aspect-ratio: 9 / 16;
+  border: 3px solid var(--ink); border-radius: 16px; overflow: hidden;
+  background: #000; box-shadow: 5px 5px 0 var(--ink);
+  touch-action: none; user-select: none; -webkit-user-select: none;
+  -webkit-touch-callout: none; cursor: pointer;
+}
+.frame canvas, .frame video {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: contain; display: block;
+}
+.badge {
+  position: absolute; top: 10px; left: 10px; z-index: 2;
+  padding: 4px 10px; border: 2px solid var(--ink); border-radius: 999px;
+  background: var(--acc); color: var(--ink);
+  font-size: 11px; font-weight: 900; letter-spacing: .5px;
+  pointer-events: none;
+}
+.play {
+  position: absolute; inset: 0; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  background: rgba(0, 0, 0, .18);
+  pointer-events: none;
+}
+.play .ico {
+  width: 64px; height: 64px; border: 3px solid var(--ink); border-radius: 50%;
+  background: var(--acc); color: var(--ink);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; box-shadow: 3px 3px 0 var(--ink);
+}
+.play span { color: #fff; font-weight: 900; font-size: 14px; text-shadow: 0 2px 0 #000; }
+.frame.holding .play { display: none; }
+.field { display: block; margin: 18px 0 0; font-weight: 800; font-size: 14px; }
+.field input[type="range"] { display: block; width: 100%; margin-top: 6px; accent-color: var(--ink); }
+.hint { margin: 10px 0 0; font-weight: 800; font-size: 14px; }
+.note { margin: 12px 0 0; font-size: 13px; line-height: 1.55; }
+.limits { margin-top: 20px; padding: 10px 12px; border: 2px dashed var(--ink); border-radius: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <a href="/" aria-label="Kembali ke beranda PRIMSIC">←</a>
+  <h1>Animasi dari video</h1>
+</header>
+
+<main>
+  <p class="lead">Pilih video. Semua diproses di browser dan tidak diunggah. Tekan dan tahan gambar untuk memutar potongan pendek, lepas untuk berhenti.</p>
+
+  <label class="pick">
+    <input id="pick" class="sr" type="file" accept="video/mp4,video/webm,video/quicktime">
+    📹 Pilih video
+  </label>
+
+  <p id="err" class="err" role="alert" hidden></p>
+
+  <section id="stage" hidden>
+    <div id="frame" class="frame" aria-label="Tekan dan tahan untuk memutar animasi">
+      <canvas id="poster" aria-hidden="true"></canvas>
+      <video id="clip" muted playsinline preload="auto" hidden></video>
+      <span class="badge">ANIMASI</span>
+      <div class="play" id="playHint"><div class="ico">▶</div><span>Tekan lama</span></div>
+    </div>
+
+    <label class="field">Mulai dari detik ke-<span id="startVal">0.0</span>
+      <input id="start" type="range" min="0" max="0" step="0.1" value="0">
+    </label>
+    <p id="hint" class="hint"></p>
+    <p class="note">Ini animasi dari video, bukan foto kamera. Tidak ada metadata kamera atau merek perangkat yang ditambahkan, dan halaman ini tidak menyediakan file untuk diunduh.</p>
+  </section>
+
+  <p class="note limits"><b>Catatan:</b> format yang bisa diputar tergantung browser. MP4 (H.264) biasanya paling aman.</p>
+</main>
+
+<script>
+const SEG = 3;   // panjang potongan yang diputar saat ditekan lama (detik)
+const $ = id => document.getElementById(id);
+const frame = $("frame"), clip = $("clip"), poster = $("poster");
+const pctx = poster.getContext("2d");
+let url = null, dur = 0, seg = 0, startAt = 0, holding = false, raf = 0;
+
+function showErr(msg) { $("err").textContent = msg; $("err").hidden = false; }
+function clearErr() { $("err").hidden = true; }
+
+// Menunggu sampai frame di posisi t siap, lalu menggambarnya sebagai poster.
+function seekTo(t) {
+  return new Promise(resolve => {
+    const done = () => { clip.removeEventListener("seeked", done); drawPoster(); resolve(); };
+    clip.addEventListener("seeked", done);
+    clip.currentTime = t;
+  });
+}
+
+function drawPoster() {
+  if (!clip.videoWidth) return;
+  poster.width = clip.videoWidth;
+  poster.height = clip.videoHeight;
+  pctx.drawImage(clip, 0, 0, poster.width, poster.height);
+}
+
+function release() {
+  if (!holding) return;
+  holding = false;
+  cancelAnimationFrame(raf);
+  frame.classList.remove("holding");
+  clip.pause();
+  clip.hidden = true;
+}
+
+$("pick").addEventListener("change", ev => {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = "";
+  if (!file) return;
+  clearErr();
+  release();
+  $("stage").hidden = true;
+  if (url) URL.revokeObjectURL(url);
+  url = URL.createObjectURL(file);
+  clip.src = url;
+  clip.load();
+});
+
+clip.addEventListener("loadedmetadata", async () => {
+  dur = clip.duration;
+  if (!isFinite(dur) || dur <= 0) return showErr("Durasi video tidak terbaca.");
+  seg = Math.min(SEG, dur);
+  frame.style.aspectRatio = `${clip.videoWidth} / ${clip.videoHeight}`;
+  const s = $("start");
+  s.max = Math.max(0, dur - seg).toFixed(1);
+  s.value = 0;
+  startAt = 0;
+  $("startVal").textContent = "0.0";
+  $("hint").textContent = `Tekan dan tahan untuk memutar ${Math.round(seg)} detik.`;
+  $("stage").hidden = false;
+  await seekTo(0);
+});
+
+clip.addEventListener("error", () => {
+  if (!clip.getAttribute("src")) return;
+  showErr("Browser ini tidak bisa memutar video tersebut. Coba MP4 (H.264) atau WebM.");
+});
+
+$("start").addEventListener("input", async ev => {
+  startAt = Number(ev.target.value);
+  $("startVal").textContent = startAt.toFixed(1);
+  if (!holding) await seekTo(startAt);
+});
+
+// Loop potongan selama ditahan
+function loop() {
+  if (!holding) return;
+  if (clip.currentTime >= startAt + seg - 0.05) clip.currentTime = startAt;
+  raf = requestAnimationFrame(loop);
+}
+
+frame.addEventListener("pointerdown", e => {
+  if (!dur) return;
+  e.preventDefault();
+  holding = true;
+  frame.classList.add("holding");
+  if (frame.setPointerCapture) frame.setPointerCapture(e.pointerId);
+  clip.muted = true;
+  clip.hidden = false;
+  clip.currentTime = startAt;
+  clip.play().catch(() => {});
+  raf = requestAnimationFrame(loop);
+});
+
+["pointerup", "pointercancel", "lostpointercapture"].forEach(t => frame.addEventListener(t, release));
+frame.addEventListener("contextmenu", e => e.preventDefault());
+</script>
+</body>
+</html>

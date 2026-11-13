@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cek Foto · AI atau asli?</title>
+<style>
+:root {
+  --ink: #111;
+  --paper: #fff8e7;
+  --acc: #ffd23f;
+  --bad: #ff5d73;
+  --ok: #3ddc84;
+  --neutral: #e5e7eb;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Trebuchet MS", system-ui, sans-serif;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  padding-bottom: 32px;
+}
+header {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  background: var(--acc);
+  border-bottom: 4px solid var(--ink);
+}
+header h1 { margin: 0; flex: 1; font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: .4px; }
+header a {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 40px; height: 40px; padding: 0 12px;
+  border: 3px solid var(--ink); border-radius: 10px;
+  background: #fff; color: var(--ink); text-decoration: none; font-weight: 900; font-size: 20px;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+main { max-width: 560px; margin: 0 auto; padding: 16px; }
+.lead { margin: 4px 0 14px; font-size: 15px; line-height: 1.5; }
+.pick {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  min-height: 52px; padding: 12px;
+  border: 3px solid var(--ink); border-radius: 14px;
+  background: #5cc8ff; color: var(--ink);
+  font-size: 17px; font-weight: 900;
+  box-shadow: 5px 5px 0 var(--ink);
+  cursor: pointer;
+}
+.pick:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--ink); }
+.pick:focus-within { outline: 3px solid var(--ink); outline-offset: 3px; }
+.sr { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.err {
+  margin: 14px 0 0; padding: 10px 12px;
+  border: 3px solid var(--ink); border-radius: 12px;
+  background: var(--bad); font-weight: 800;
+}
+.err[hidden], #result[hidden] { display: none; }
+.preview { margin-top: 18px; }
+.preview img {
+  display: block; width: 100%; max-height: 52vh; object-fit: contain;
+  margin: 0 auto; border: 3px solid var(--ink); border-radius: 12px;
+  background: #fff; box-shadow: 5px 5px 0 var(--ink);
+}
+.verdict {
+  margin-top: 18px; padding: 14px;
+  border: 3px solid var(--ink); border-radius: 14px;
+  box-shadow: 5px 5px 0 var(--ink);
+  background: var(--neutral);
+}
+.verdict.bad { background: var(--bad); }
+.verdict.warn { background: var(--acc); }
+.verdict.ok { background: var(--ok); }
+.verdict h2 { margin: 0 0 6px; font-size: 20px; font-weight: 900; line-height: 1.25; }
+.verdict p { margin: 0; font-size: 15px; line-height: 1.45; }
+h3 { margin: 22px 0 8px; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: .5px; }
+.signals { list-style: none; margin: 0; padding: 0; }
+.signals li {
+  display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start;
+  padding: 9px 10px; margin-bottom: 8px;
+  border: 2px solid var(--ink); border-radius: 10px; background: #fff;
+  font-size: 14px; line-height: 1.4;
+}
+.tag {
+  padding: 2px 8px; border: 2px solid var(--ink); border-radius: 999px;
+  background: var(--acc); font-size: 11px; font-weight: 900; text-transform: uppercase;
+  white-space: nowrap;
+}
+.tag.ai { background: var(--bad); }
+.tag.asli { background: var(--ok); }
+.tag.info { background: #5cc8ff; }
+.none { font-size: 14px; opacity: .75; margin: 0; }
+table.meta {
+  width: 100%; border-collapse: collapse;
+  background: #fff; border: 3px solid var(--ink); border-radius: 12px; overflow: hidden;
+}
+table.meta th, table.meta td {
+  text-align: left; vertical-align: top;
+  padding: 8px 10px; border-bottom: 2px solid var(--ink);
+  font-size: 14px; line-height: 1.35;
+}
+table.meta tr:last-child th, table.meta tr:last-child td { border-bottom: 0; }
+table.meta th { width: 40%; font-weight: 800; }
+table.meta td { overflow-wrap: anywhere; }
+.note { margin: 18px 0 0; font-size: 13px; line-height: 1.55; }
+.limits { margin-top: 20px; padding: 10px 12px; border: 2px dashed var(--ink); border-radius: 12px; }
+.tip {
+  margin-top: 18px; padding: 12px 14px;
+  border: 3px solid var(--ink); border-radius: 14px; background: #fff;
+  box-shadow: 4px 4px 0 var(--ink); font-size: 14px; line-height: 1.5;
+}
+.tip[hidden] { display: none; }
+.tip b { font-size: 15px; }
+.tip p { margin: 6px 0 10px; }
+.tip a {
+  display: inline-block; padding: 8px 12px;
+  border: 3px solid var(--ink); border-radius: 10px;
+  background: var(--acc); color: var(--ink); font-weight: 900; text-decoration: none;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.btn {
+  display: inline-block; padding: 10px 14px; margin-top: 4px;
+  border: 3px solid var(--ink); border-radius: 12px;
+  background: var(--acc); color: var(--ink);
+  font: inherit; font-size: 15px; font-weight: 900;
+  box-shadow: 3px 3px 0 var(--ink); cursor: pointer;
+}
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+.tip p.status { margin: 10px 0 0; font-weight: 800; }
+.status[hidden], #aiResult[hidden] { display: none; }
+.signals li.solo { display: block; }
+.field { display: block; margin-top: 10px; font-weight: 800; font-size: 14px; }
+.field input {
+  display: block; width: 100%; margin-top: 4px; padding: 10px;
+  border: 3px solid var(--ink); border-radius: 10px; background: #fff;
+  font: inherit; font-size: 15px;
+}
+.row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.btn.ghost { background: #fff; }
+</style>
+</head>
+<body>
+<header>
+  <a href="/" aria-label="Kembali ke beranda PRIMSIC">←</a>
+  <h1>Cek foto · AI atau asli?</h1>
+</header>
+
+<main>
+  <p class="lead">Pilih satu foto. Pengecekan metadata dilakukan di perangkat ini dan foto tidak diunggah. Pengecekan isi gambar dengan AI berjalan otomatis (jika sudah login) dan hanya mengirim salinan kecil tanpa metadata.</p>
+
+  <label class="pick">
+    <input id="pick" class="sr" type="file" accept="image/jpeg,image/png,image/webp,image/gif">
+    📷 Pilih foto
+  </label>
+
+  <p id="err" class="err" role="alert" hidden></p>
+
+  <section id="result" hidden aria-live="polite">
+    <div class="preview"><img id="prev" alt="Pratinjau foto yang dicek"></div>
+
+    <div id="verdict" class="verdict">
+      <h2 id="vTitle"></h2>
+      <p id="vSum"></p>
+    </div>
+
+    <h3>Bukti</h3>
+    <ul id="signals" class="signals"></ul>
+
+    <h3>Dugaan generator</h3>
+    <ul id="gens" class="signals"></ul>
+
+    <h3>Detail file</h3>
+    <table class="meta"><tbody id="meta"></tbody></table>
+
+    <p class="note">Cara yang lebih kuat untuk memastikan: cari tahu siapa yang pertama memposting foto ini, coba pencarian gambar terbalik, dan lihat apakah ada sumber asli yang bisa dihubungi.</p>
+  </section>
+
+  <div id="aiBox" class="tip" hidden>
+    <b>Cek isi gambar pakai AI</b>
+    <p>Berjalan otomatis setelah foto dipilih, butuh login. Yang dikirim adalah salinan kecil (maksimal 1024 px) tanpa metadata, bukan file aslinya. Hasilnya pendapat model, bukan bukti.</p>
+    <button id="aiBtn" type="button" class="btn" hidden>Coba lagi</button>
+    <p id="aiStatus" class="status" role="status" hidden></p>
+  </div>
+
+  <section id="aiResult" hidden aria-live="polite">
+    <h3>Pendapat OpenAI</h3>
+    <div id="aiVerdict" class="verdict">
+      <h2 id="aiTitle"></h2>
+      <p id="aiSum"></p>
+    </div>
+    <h3>Alasan</h3>
+    <ul id="aiReasons" class="signals"></ul>
+  </section>
+
+  <p class="note limits">
+    <b>Batasan:</b> pengecekan otomatis hanya membaca metadata. Gambar AI yang metadatanya sudah dihapus tidak terdeteksi, dan metadata kamera bisa dipalsukan. Pendapat AI bisa salah. Hasilnya bukti, bukan kepastian.
+  </p>
+  <section id="aiSettings" class="tip" hidden>
+    <b>Pengaturan AI (khusus owner)</b>
+    <p id="setInfo" class="status"></p>
+    <label class="field">Kunci API OpenAI
+      <input id="setKey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-...">
+    </label>
+    <label class="field">Model yang bisa membaca gambar
+      <input id="setModel" type="text" autocomplete="off" spellcheck="false" placeholder="nama model">
+    </label>
+    <div class="row">
+      <button id="setSave" type="button" class="btn">Simpan</button>
+      <button id="setClear" type="button" class="btn ghost">Hapus yang tersimpan</button>
+    </div>
+    <p id="setStatus" class="status" role="status" hidden></p>
+  </section>
+</main>
+
+<script type="module">
+import { analyzeFile } from "./analyze.js";
+
+const $ = id => document.getElementById(id);
+const KIND = { ai: "AI", asli: "Kamera", netral: "Catatan", info: "Privasi" };
+const KIND_CLASS = { ai: "ai", asli: "asli", info: "info" };
+const FORMAT = { jpeg: "JPEG", png: "PNG", webp: "WebP", gif: "GIF" };
+let previewUrl = null;
+
+let currentFile = null;
+const MAX_CHARS = 500 * 1024;   // harus sama dengan batas di server (cek-foto-ai.js)
+
+$("pick").addEventListener("change", async ev => {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+
+  if (previewUrl) URL.revokeObjectURL(previewUrl);
+  previewUrl = URL.createObjectURL(file);
+  $("prev").src = previewUrl;
+  $("err").hidden = true;
+  $("result").hidden = true;
+  $("aiBox").hidden = true;
+  $("aiResult").hidden = true;
+  $("aiBtn").hidden = true;
+  setAiStatus("");
+  aiSeq++;   // membatalkan pengecekan AI foto sebelumnya
+
+  let res;
+  try {
+    res = await analyzeFile(await file.arrayBuffer());
+  } catch (err) {
+    res = { ok: false, error: "File tidak bisa dibaca." };
+  }
+  if (!res.ok) {
+    $("err").textContent = res.error;
+    $("err").hidden = false;
+    ev.target.value = "";
+    return;
+  }
+  currentFile = file;
+  show(res);
+  $("aiBox").hidden = false;
+  runAi();
+  ev.target.value = "";   // supaya foto yang sama bisa dipilih lagi
+});
+
+function show(r) {
+  $("result").hidden = false;
+  $("verdict").className = "verdict " + r.verdict.tone;
+  $("vTitle").textContent = r.verdict.title;
+  $("vSum").textContent = r.verdict.summary;
+
+  const ul = $("signals");
+  ul.replaceChildren();
+  if (!r.signals.length) {
+    const li = document.createElement("li");
+    li.textContent = "Tidak ada bukti yang bisa dibaca.";
+    ul.append(li);
+  }
+  for (const s of r.signals) {
+    const li = document.createElement("li");
+    const tag = document.createElement("span");
+    tag.className = "tag " + (KIND_CLASS[s.kind] || "");
+    tag.textContent = `${KIND[s.kind] || s.kind} · ${s.strength}`;
+    const text = document.createElement("span");
+    text.textContent = s.label;
+    li.append(tag, text);
+    ul.append(li);
+  }
+
+  const gl = $("gens");
+  gl.replaceChildren();
+  if (!r.generators.length) {
+    const li = document.createElement("li");
+    li.textContent = "Tidak ada nama generator di metadata.";
+    gl.append(li);
+  }
+  for (const g of r.generators) {
+    const li = document.createElement("li");
+    const tag = document.createElement("span");
+    tag.className = "tag ai";
+    tag.textContent = "AI";
+    const text = document.createElement("span");
+    text.textContent = `${g.name} (dari ${g.source})`;
+    li.append(tag, text);
+    gl.append(li);
+  }
+
+  const c = r.camera || {};
+  const rows = [
+    ["Format", FORMAT[r.format] || r.format],
+    ["Ukuran", r.dims ? `${r.dims.w} × ${r.dims.h} px` : "tidak terbaca"],
+    ["Metadata", r.exifFound ? "ada" : "tidak ada"],
+    ["Kamera", c.name || "-"],
+    ["Lensa", c.lens || "-"],
+    ["Software", c.software || "-"],
+    ["Tanggal ambil", c.dateOriginal || "-"],
+    ["Pemotretan", [c.exposure, c.fNumber, c.iso ? `ISO ${c.iso}` : null, c.focal].filter(Boolean).join(" · ") || "-"],
+    ["Data lokasi", r.hasLocation ? "ada (koordinat tidak ditampilkan)" : "tidak ada"]
+  ];
+  const tbody = $("meta");
+  tbody.replaceChildren();
+  for (const [k, v] of rows) {
+    const tr = document.createElement("tr");
+    const th = document.createElement("th");
+    th.textContent = k;
+    const td = document.createElement("td");
+    td.textContent = v;
+    tr.append(th, td);
+    tbody.append(tr);
+  }
+}
+function getToken() {
+  try { return localStorage.getItem("xc_token") || ""; } catch (e) { return ""; }
+}
+
+function setAiStatus(text) {
+  $("aiStatus").textContent = text;
+  $("aiStatus").hidden = !text;
+}
+
+// Menggambar ulang ke canvas membuang semua metadata (GPS, data kamera, dll).
+async function smallCopy(file) {
+  const bmp = await createImageBitmap(file);
+  const scale = Math.min(1, 1024 / Math.max(bmp.width, bmp.height));
+  const w = Math.max(1, Math.round(bmp.width * scale));
+  const h = Math.max(1, Math.round(bmp.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#fff";          // PNG transparan jadi putih, bukan hitam
+  ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(bmp, 0, 0, w, h);
+  if (bmp.close) bmp.close();
+  for (const q of [0.85, 0.75, 0.65, 0.55]) {
+    const url = canvas.toDataURL("image/jpeg", q);
+    if (url.length <= MAX_CHARS) return url;
+  }
+  throw new Error("Foto terlalu besar untuk dikirim.");
+}
+
+let aiSeq = 0;
+
+// Dipanggil otomatis setiap foto dipilih. Hasil foto lama dibuang kalau foto sudah diganti.
+async function runAi() {
+  const file = currentFile;
+  if (!file) return;
+  const seq = ++aiSeq;
+  $("aiResult").hidden = true;
+  $("aiBtn").hidden = true;
+
+  const tok = getToken();
+  if (!tok) {
+    setAiStatus("Login dulu di beranda PRIMSIC untuk cek isi gambar pakai AI, lalu tekan Coba lagi.");
+    $("aiBtn").hidden = false;
+    return;
+  }
+
+  setAiStatus("Mengecek isi gambar pakai AI…");
+  try {
+    const image = await smallCopy(file);
+    const r = await fetch("/api/cek-foto/ai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + tok },
+      body: JSON.stringify({ image })
+    });
+    const j = await r.json().catch(() => ({}));
+    if (seq !== aiSeq) return;
+    if (!r.ok || !j.success) throw new Error(j.error || `Gagal (status ${r.status}).`);
+    showAi(j.data);
+    setAiStatus("");
+  } catch (e) {
+    if (seq !== aiSeq) return;
+    setAiStatus(e.message || "Pengecekan gagal.");
+    $("aiBtn").hidden = false;
+  }
+}
+
+$("aiBtn").addEventListener("click", runAi);
+
+const AI_TITLE = { ai: "Kemungkinan besar AI", asli: "Kemungkinan besar foto asli", tidak_pasti: "Belum bisa dipastikan" };
+const AI_TONE = { ai: "bad", asli: "ok", tidak_pasti: "warn" };
+const KEY_LABEL = { tinggi: "tinggi", sedang: "sedang", rendah: "rendah" };
+
+function showAi(d) {
+  $("aiVerdict").className = "verdict " + (AI_TONE[d.verdict] || "warn");
+  $("aiTitle").textContent = AI_TITLE[d.verdict] || AI_TITLE.tidak_pasti;
+  let sum = `Keyakinan model: ${d.confidence}%. Ini pendapat model AI, bukan bukti, dan bisa salah.`;
+  if (d.generator) {
+    sum += ` Dugaan generator: ${d.generator} (keyakinan ${KEY_LABEL[d.keyakinan_generator] || "rendah"}). Nama generator dari isi gambar hanya tebakan.`;
+  }
+  $("aiSum").textContent = sum;
+
+  const ul = $("aiReasons");
+  ul.replaceChildren();
+  const items = d.alasan && d.alasan.length ? d.alasan : ["Model tidak memberi alasan."];
+  for (const a of items) {
+    const li = document.createElement("li");
+    li.className = "solo";
+    li.textContent = a;
+    ul.append(li);
+  }
+  $("aiResult").hidden = false;
+}
+// ---------- Pengaturan AI (khusus owner) ----------
+function setSetStatus(text) {
+  $("setStatus").textContent = text;
+  $("setStatus").hidden = !text;
+}
+
+// Hanya versi terpotong yang dipakai. Kunci lengkap tidak pernah kembali ke halaman.
+function renderSettings(d) {
+  const keyPart = d.hasKey
+    ? `Kunci aktif ${d.keyMasked} (${d.keySource === "environment" ? "dari environment server, tidak bisa diubah dari sini" : "tersimpan di server"}).`
+    : "Belum ada kunci. Cek AI nonaktif sampai kunci diisi.";
+  const modelPart = `Model: ${d.model || "belum diisi"}${d.modelSource === "environment" ? " (dari environment)" : ""}.`;
+  $("setInfo").textContent = keyPart + " " + modelPart;
+}
+
+async function loadSettings() {
+  const tok = getToken();
+  if (!tok) return;
+  try {
+    const r = await fetch("/api/cek-foto/settings", { headers: { Authorization: "Bearer " + tok } });
+    if (!r.ok) return;   // bukan owner: panel tetap tersembunyi
+    const j = await r.json();
+    renderSettings(j.data);
+    $("aiSettings").hidden = false;
+  } catch (e) {
+    // jaringan gagal: panel tetap tersembunyi
+  }
+}
+
+async function saveSettings(body) {
+  setSetStatus("Menyimpan…");
+  try {
+    const r = await fetch("/api/cek-foto/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + getToken() },
+      body: JSON.stringify(body)
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.success) throw new Error(j.error || `Gagal (status ${r.status}).`);
+    $("setKey").value = "";   // kunci dikosongkan dari kolom setelah terkirim
+    renderSettings(j.data);
+    setSetStatus("Tersimpan.");
+  } catch (e) {
+    setSetStatus(e.message || "Gagal menyimpan.");
+  }
+}
+
+$("setSave").addEventListener("click", () => {
+  const apiKey = $("setKey").value.trim();
+  const model = $("setModel").value.trim();
+  if (!apiKey && !model) return setSetStatus("Isi kunci atau model dulu.");
+  const body = {};
+  if (apiKey) body.apiKey = apiKey;
+  if (model) body.model = model;
+  saveSettings(body);
+});
+
+$("setClear").addEventListener("click", () => {
+  if (confirm("Hapus kunci dan model yang tersimpan di server?")) saveSettings({ clear: true });
+});
+
+loadSettings();
+</script>
+</body>
+</html>

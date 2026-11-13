@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FotoLive · foto yang bisa bergerak</title>
+<style>
+:root {
+  --ink: #111;
+  --paper: #fff8e7;
+  --acc: #ffd23f;
+  --pink: #ff9ecd;
+  --blue: #5cc8ff;
+  --bad: #ff5d73;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Trebuchet MS", system-ui, sans-serif;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  padding-bottom: 32px;
+}
+header {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px;
+  background: var(--pink);
+  border-bottom: 4px solid var(--ink);
+}
+header h1 { margin: 0; flex: 1; font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: .4px; }
+header a {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 40px; height: 40px; padding: 0 12px;
+  border: 3px solid var(--ink); border-radius: 10px;
+  background: #fff; color: var(--ink); text-decoration: none; font-weight: 900; font-size: 20px;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+main { max-width: 560px; margin: 0 auto; padding: 16px; }
+.lead { margin: 4px 0 14px; font-size: 15px; line-height: 1.5; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 48px; padding: 10px 14px;
+  border: 3px solid var(--ink); border-radius: 14px;
+  background: var(--blue); color: var(--ink); text-decoration: none;
+  font: inherit; font-size: 16px; font-weight: 900;
+  box-shadow: 4px 4px 0 var(--ink); cursor: pointer;
+}
+.btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+.btn.alt { background: var(--acc); }
+.btn.ghost { background: #fff; }
+.btn:disabled { opacity: .55; cursor: not-allowed; }
+.pick { position: relative; display: flex; }
+.pick .btn { width: 100%; font-size: 17px; min-height: 56px; box-shadow: 5px 5px 0 var(--ink); }
+.sr { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.pick:focus-within { outline: 3px solid var(--ink); outline-offset: 3px; }
+.err {
+  margin: 14px 0 0; padding: 10px 12px;
+  border: 3px solid var(--ink); border-radius: 12px;
+  background: var(--bad); font-weight: 800;
+}
+.panel {
+  margin-top: 18px; padding: 14px;
+  border: 3px solid var(--ink); border-radius: 14px;
+  background: #fff; box-shadow: 5px 5px 0 var(--ink);
+}
+.panel h2 { margin: 0 0 6px; font-size: 18px; font-weight: 900; }
+.info { margin: 0 0 12px; font-size: 14px; line-height: 1.45; }
+video.src {
+  display: block; width: 100%; max-height: 50vh;
+  border: 3px solid var(--ink); border-radius: 12px; background: #000;
+}
+.row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.stage {
+  position: relative; width: 100%; aspect-ratio: 9 / 16; max-height: 70vh; margin: 0 auto;
+  border: 3px solid var(--ink); border-radius: 14px; background: #000; overflow: hidden;
+  box-shadow: 5px 5px 0 var(--ink);
+  touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+  cursor: pointer;
+}
+.stage img, .stage video {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+  pointer-events: none;
+}
+.hint { margin: 10px 0 0; font-size: 14px; line-height: 1.45; text-align: center; font-weight: 800; }
+.note { margin: 18px 0 0; font-size: 13px; line-height: 1.55; }
+.note.box { padding: 10px 12px; border: 2px dashed var(--ink); border-radius: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <a href="/" aria-label="Kembali ke beranda PRIMSIC">←</a>
+  <h1>FotoLive</h1>
+</header>
+
+<main>
+  <p class="lead">Pilih video pendek, pilih satu frame untuk jadi foto, lalu tahan fotonya untuk memutar gerakannya. Semua diproses di perangkat ini, video tidak diunggah.</p>
+
+  <label class="pick">
+    <input id="pick" class="sr" type="file" accept="video/*">
+    <span class="btn alt" aria-hidden="true">🎬 Pilih video</span>
+  </label>
+
+  <p id="err" class="err" role="alert" hidden></p>
+
+  <section id="editor" class="panel" hidden>
+    <h2>1. Pilih frame</h2>
+    <p id="info" class="info"></p>
+    <video id="src" class="src" playsinline controls preload="auto"></video>
+    <div class="row">
+      <button id="capture" class="btn" type="button">📸 Jadikan foto dari frame ini</button>
+    </div>
+    <p class="note box">Pakai video pendek (sekitar 1 sampai 6 detik) supaya gerakannya terasa seperti Live Photo. Maksimal 30 MB.</p>
+  </section>
+
+  <section id="live" class="panel" hidden>
+    <h2>2. Tahan untuk bergerak</h2>
+    <div id="stage" class="stage" role="img" aria-label="Foto yang bisa bergerak. Tahan untuk memutar gerakannya.">
+      <img id="still" alt="Foto dari frame yang dipilih">
+      <video id="clip" playsinline hidden></video>
+    </div>
+    <p class="hint">Tahan layarnya untuk memutar. Lepas untuk kembali ke foto.</p>
+    <div class="row">
+      <button id="toggle" class="btn ghost" type="button" aria-pressed="false">▶ Putar gerakan</button>
+      <button id="dlPack" class="btn alt" type="button">⬇ Unduh paket (foto + video, ZIP)</button>
+      <a id="dlStill" class="btn" href="#" download="fotolive-foto.jpg">⬇ Unduh foto (JPG)</a>
+      <a id="dlClip" class="btn" href="#" download="fotolive-video">⬇ Unduh video</a>
+      <button id="again" class="btn ghost" type="button">↺ Pilih video lain</button>
+    </div>
+  </section>
+
+  <p class="note">Catatan: video dari iPhone (HEVC di .mov) mungkin tidak bisa diputar di semua browser. Kalau gagal, coba video MP4 (H.264) atau WebM.</p>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const MAX_BYTES = 30 * 1024 * 1024;
+
+let srcFile = null;
+let srcUrl = null;
+let stillUrl = null;
+let stillBlob = null;
+
+function showErr(text) {
+  $("err").textContent = text;
+  $("err").hidden = !text;
+}
+
+function resetAll() {
+  if (srcUrl) URL.revokeObjectURL(srcUrl);
+  if (stillUrl) URL.revokeObjectURL(stillUrl);
+  srcUrl = null;
+  stillUrl = null;
+  stillBlob = null;
+  srcFile = null;
+  $("src").removeAttribute("src");
+  $("src").load();
+  $("clip").pause();
+  $("clip").removeAttribute("src");
+  $("clip").load();
+  $("still").removeAttribute("src");
+  $("editor").hidden = true;
+  $("live").hidden = true;
+  setToggle(false);
+  showErr("");
+}
+
+function setToggle(on) {
+  $("toggle").setAttribute("aria-pressed", String(on));
+  $("toggle").textContent = on ? "■ Berhenti" : "▶ Putar gerakan";
+}
+
+$("pick").addEventListener("change", async ev => {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = "";
+  if (!file) return;
+
+  resetAll();
+  if (!file.type.startsWith("video/")) {
+    showErr("Pilih file video ya (MP4, WebM, atau MOV).");
+    return;
+  }
+  if (file.size > MAX_BYTES) {
+    showErr("Video terlalu besar. Maksimal 30 MB.");
+    return;
+  }
+
+  srcFile = file;
+  srcUrl = URL.createObjectURL(file);
+  const v = $("src");
+  v.src = srcUrl;
+
+  try {
+    await new Promise((resolve, reject) => {
+      v.onloadedmetadata = resolve;
+      v.onerror = () => reject(new Error("Browser tidak bisa memutar video ini. Coba MP4 (H.264) atau WebM."));
+    });
+  } catch (e) {
+    resetAll();
+    showErr(e.message);
+    return;
+  }
+  v.onerror = null;
+
+  const dur = v.duration;
+  const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+  let info = `${v.videoWidth} × ${v.videoHeight} px · ${dur.toFixed(1)} detik · ${sizeMb} MB`;
+  if (dur > 6) info += ". Video ini cukup panjang, Live Photo biasanya lebih terasa dengan 1 sampai 6 detik.";
+  $("info").textContent = info;
+  $("editor").hidden = false;
+});
+
+$("capture").addEventListener("click", async () => {
+  const v = $("src");
+  if (!srcFile || !v.videoWidth) return;
+  v.pause();
+
+  const scale = Math.min(1, 1080 / Math.max(v.videoWidth, v.videoHeight));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(v.videoWidth * scale);
+  canvas.height = Math.round(v.videoHeight * scale);
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+
+  const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", 0.92));
+  if (!blob) {
+    showErr("Frame tidak bisa diambil. Coba pilih posisi lain di video.");
+    return;
+  }
+  if (stillUrl) URL.revokeObjectURL(stillUrl);
+  stillUrl = URL.createObjectURL(blob);
+  stillBlob = blob;
+  $("still").src = stillUrl;
+  $("dlStill").href = stillUrl;
+
+  const ext = (srcFile.name.split(".").pop() || "mp4").toLowerCase().replace(/[^a-z0-9]/g, "") || "mp4";
+  $("dlClip").href = srcUrl;
+  $("dlClip").download = `fotolive-video.${ext}`;
+
+  $("clip").src = srcUrl;
+  $("live").hidden = false;
+  $("live").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+function startClip() {
+  const c = $("clip");
+  if (!c.src) return;
+  c.hidden = false;
+  c.currentTime = 0;
+  c.play().catch(() => {});
+  setToggle(true);
+}
+
+function stopClip() {
+  const c = $("clip");
+  c.pause();
+  c.hidden = true;
+  setToggle(false);
+}
+
+const stage = $("stage");
+stage.addEventListener("pointerdown", e => {
+  e.preventDefault();
+  stage.setPointerCapture && stage.setPointerCapture(e.pointerId);
+  startClip();
+});
+stage.addEventListener("pointerup", stopClip);
+stage.addEventListener("pointercancel", stopClip);
+stage.addEventListener("contextmenu", e => e.preventDefault());
+$("clip").addEventListener("ended", stopClip);
+
+$("toggle").addEventListener("click", () => {
+  if ($("clip").hidden || $("clip").paused) startClip();
+  else stopClip();
+});
+
+$("again").addEventListener("click", () => {
+  resetAll();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+// ---------- Paket ZIP (foto + video dalam satu file), dibuat di browser ----------
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+
+function crc32(u8) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+// ZIP tanpa kompresi (metode store): foto dan video sudah terkompresi, jadi hasilnya sama.
+function makeZip(files) {
+  const enc = new TextEncoder();
+  const now = new Date();
+  const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | Math.floor(now.getSeconds() / 2);
+  const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+  const parts = [];
+  const central = [];
+  let offset = 0;
+
+  for (const f of files) {
+    const name = enc.encode(f.name);
+    const crc = crc32(f.data);
+    const size = f.data.length;
+
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true);
+    lh.setUint16(4, 20, true);
+    lh.setUint16(6, 0x0800, true);      // nama UTF-8
+    lh.setUint16(8, 0, true);           // store
+    lh.setUint16(10, dosTime, true);
+    lh.setUint16(12, dosDate, true);
+    lh.setUint32(14, crc, true);
+    lh.setUint32(18, size, true);
+    lh.setUint32(22, size, true);
+    lh.setUint16(26, name.length, true);
+    lh.setUint16(28, 0, true);
+    parts.push(new Uint8Array(lh.buffer), name, f.data);
+
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true);
+    ch.setUint16(4, 20, true);
+    ch.setUint16(6, 20, true);
+    ch.setUint16(8, 0x0800, true);
+    ch.setUint16(10, 0, true);
+    ch.setUint16(12, dosTime, true);
+    ch.setUint16(14, dosDate, true);
+    ch.setUint32(16, crc, true);
+    ch.setUint32(20, size, true);
+    ch.setUint32(24, size, true);
+    ch.setUint16(28, name.length, true);
+    ch.setUint32(42, offset, true);
+    central.push(new Uint8Array(ch.buffer), name);
+    offset += 30 + name.length + size;
+  }
+
+  const centralSize = central.reduce((a, b) => a + b.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true);
+  end.setUint16(8, files.length, true);
+  end.setUint16(10, files.length, true);
+  end.setUint32(12, centralSize, true);
+  end.setUint32(16, offset, true);
+
+  return new Blob([...parts, ...central, new Uint8Array(end.buffer)], { type: "application/zip" });
+}
+
+$("dlPack").addEventListener("click", async () => {
+  if (!stillBlob || !srcFile) return;
+  try {
+    const ext = (srcFile.name.split(".").pop() || "mp4").toLowerCase().replace(/[^a-z0-9]/g, "") || "mp4";
+    const zip = makeZip([
+      { name: "fotolive-foto.jpg", data: new Uint8Array(await stillBlob.arrayBuffer()) },
+      { name: `fotolive-video.${ext}`, data: new Uint8Array(await srcFile.arrayBuffer()) }
+    ]);
+    const url = URL.createObjectURL(zip);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "fotolive-paket.zip";
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (e) {
+    showErr("Paket gagal dibuat. Coba unduh foto dan video satu per satu.");
+  }
+});
+</script>
+</body>
+</html>

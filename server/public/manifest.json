@@ -1,0 +1,18 @@
+{
+  "name": "PRIMSIC",
+  "short_name": "PRIMSIC",
+  "description": "PRIMSIC: musik, video, shalat & Al-Quran",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030303",
+  "theme_color": "#ff0033",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgZmlsbD0iIzAzMDMwMyIgcng9IjgwIi8+PHRleHQgeD0iMjU2IiB5PSIzMzAiIGZvbnQtc2l6ZT0iMjQwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZmYwMDMzIj7imYs8L3RleHQ+PC9zdmc+",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
