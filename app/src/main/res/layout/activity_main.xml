@@ -85,15 +85,15 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
             android:gravity="center"
-            android:text="FotoLive"
+            android:text="PRIMSIC"
             android:textSize="18sp"
             android:textStyle="bold" />
 
         <Button
-            android:id="@+id/btnFotoLive"
+            android:id="@+id/btnPrimsic"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="Buka FotoLive" />
+            android:text="Buka PRIMSIC" />
     </LinearLayout>
 </ScrollView>

@@ -31,7 +31,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.ConcurrentHashMap
 
-class FotoLiveActivity : Activity() {
+class PrimsicActivity : Activity() {
 
     private lateinit var webView: WebView
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -83,7 +83,7 @@ class FotoLiveActivity : Activity() {
                 error: WebResourceError?
             ) {
                 if (request?.isForMainFrame == true && !fellBackToOffline) {
-                    showOffline("Server tidak bisa dibuka, pakai FotoLive offline")
+                    showOffline("Server PRIMSIC tidak bisa dibuka, pakai FotoLive offline")
                 }
             }
         }
@@ -102,7 +102,7 @@ class FotoLiveActivity : Activity() {
                     return false
                 }
                 return try {
-                    this@FotoLiveActivity.startActivityForResult(intent, REQ_PICK)
+                    this@PrimsicActivity.startActivityForResult(intent, REQ_PICK)
                     true
                 } catch (e: Exception) {
                     filePathCallback = null
@@ -252,7 +252,7 @@ class FotoLiveActivity : Activity() {
         @JavascriptInterface
         fun close() {
             if (!offlinePageActive) return
-            mainHandler.post { this@FotoLiveActivity.finish() }
+            mainHandler.post { this@PrimsicActivity.finish() }
         }
     }
 

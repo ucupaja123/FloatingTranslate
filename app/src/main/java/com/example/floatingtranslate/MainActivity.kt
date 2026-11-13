@@ -73,8 +73,8 @@ class MainActivity : AppCompatActivity() {
             stopService(Intent(this, FloatingService::class.java))
         }
 
-        findViewById<Button>(R.id.btnFotoLive).setOnClickListener {
-            startActivity(Intent(this, FotoLiveActivity::class.java))
+        findViewById<Button>(R.id.btnPrimsic).setOnClickListener {
+            startActivity(Intent(this, PrimsicActivity::class.java))
         }
     }
 
