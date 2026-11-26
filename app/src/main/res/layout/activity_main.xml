@@ -10,6 +10,13 @@
         android:orientation="vertical"
         android:padding="24dp">
 
+        <Button
+            android:id="@+id/btnSoal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            android:text="Scan Soal (AI)" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -80,20 +87,5 @@
             android:layout_height="wrap_content"
             android:text="Matikan bubble" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            android:gravity="center"
-            android:text="PRIMSIC"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/btnPrimsic"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Buka PRIMSIC" />
     </LinearLayout>
 </ScrollView>
