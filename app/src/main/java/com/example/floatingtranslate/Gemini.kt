@@ -8,23 +8,36 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.net.HttpURLConnection
+import java.net.SocketTimeoutException
 import java.net.URL
 
 object Gemini {
-    const val DEFAULT_MODEL = "gemini-flash-latest"
+    // Model ringan dicoba dulu supaya cepat; kalau sibuk, pindah ke cadangan.
+    private val MODELS = listOf("gemini-flash-lite-latest", "gemini-flash-latest")
+    private const val BUSY = "Gagal: server AI lagi sibuk. Otomatis dicoba lagi."
 
     fun prefs(context: Context) = context.getSharedPreferences("soal", Context.MODE_PRIVATE)
 
     // Panggil dari thread latar. Selalu mengembalikan teks untuk ditampilkan.
-    fun ask(context: Context, bitmap: Bitmap): String = try {
+    fun ask(context: Context, bitmap: Bitmap): String {
         val key = prefs(context).getString("key", "").orEmpty()
-        val model = prefs(context).getString("model", "").orEmpty().ifBlank { DEFAULT_MODEL }
-        if (key.isBlank()) "Isi API key Gemini dulu di menu Scan Soal." else request(key, model, bitmap)
-    } catch (e: Exception) {
-        "Gagal: ${e.message}"
+        if (key.isBlank()) return "Isi API key Gemini dulu di menu Scan Soal."
+        var reply = BUSY
+        for (model in MODELS) {
+            reply = try {
+                request(key, model, bitmap) ?: continue
+            } catch (e: SocketTimeoutException) {
+                continue
+            } catch (e: Exception) {
+                return "Gagal: cek koneksi internet. (${e.message})"
+            }
+            break
+        }
+        return reply
     }
 
-    private fun request(key: String, model: String, bitmap: Bitmap): String {
+    // null berarti model ini sedang tidak bisa dipakai.
+    private fun request(key: String, model: String, bitmap: Bitmap): String? {
         val parts = JSONArray().put(
             JSONObject().put(
                 "text",
@@ -35,7 +48,7 @@ object Gemini {
             )
         )
         val jpg = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, jpg)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 80, jpg)
         parts.put(
             JSONObject().put(
                 "inline_data",
@@ -52,8 +65,8 @@ object Gemini {
         val c = URL(url).openConnection() as HttpURLConnection
         try {
             c.requestMethod = "POST"
-            c.connectTimeout = 20000
-            c.readTimeout = 90000
+            c.connectTimeout = 10000
+            c.readTimeout = 20000
             c.doOutput = true
             c.setRequestProperty("Content-Type", "application/json")
             c.setRequestProperty("x-goog-api-key", key)
@@ -63,7 +76,11 @@ object Gemini {
             val stream = if (status < 400) c.inputStream else c.errorStream
             val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
             if (status == 429) return "Kuota API habis. Tunggu sebentar atau cek kuota di Google AI Studio."
-            if (status >= 400) return "Error $status: $text"
+            if (status == 404 || status >= 500) return null
+            if (status == 400 || status == 401 || status == 403) {
+                return "Error $status: permintaan ditolak. Cek lagi API key kamu."
+            }
+            if (status >= 400) return "Error $status dari server AI."
 
             val out = JSONObject(text).optJSONArray("candidates")
                 ?.optJSONObject(0)?.optJSONObject("content")?.optJSONArray("parts")

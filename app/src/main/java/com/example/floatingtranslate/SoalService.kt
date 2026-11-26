@@ -190,7 +190,7 @@ class SoalService : Service() {
         asking = false
         val failed = listOf("Gagal", "Error", "Kuota", "Isi API").any { reply.startsWith(it) }
         // Jeda antar permintaan supaya kuota tidak cepat habis; lebih lama kalau gagal.
-        nextRequestAt = SystemClock.elapsedRealtime() + if (failed) 30000L else 5000L
+        nextRequestAt = SystemClock.elapsedRealtime() + if (reply.startsWith("Kuota")) 30000L else if (failed) 8000L else 3000L
         if (!failed) answeredWords = words
         card?.showAnswer(reply)
         if (failed) card?.setState(ScanCard.State.ERROR, "Gagal, dicoba lagi nanti")
@@ -260,7 +260,7 @@ class SoalService : Service() {
         private const val ACTION_STOP = "com.example.floatingtranslate.STOP_SOAL"
         private const val CHANNEL_ID = "scan_soal"
         private const val NOTIF_ID = 3
-        private const val INTERVAL_MS = 1500L
+        private const val INTERVAL_MS = 800L
         private const val MIN_TEXT = 15
     }
 }
