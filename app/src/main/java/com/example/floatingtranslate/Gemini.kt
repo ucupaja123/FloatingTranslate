@@ -28,8 +28,10 @@ object Gemini {
         val parts = JSONArray().put(
             JSONObject().put(
                 "text",
-                "Jawab soal berikut dalam bahasa Indonesia. Tulis jawabannya, lalu penjelasan singkat. " +
-                    "Kalau gambarnya tidak terbaca atau tidak ada soal, katakan saja. Tanpa format markdown."
+                "Jawab soal pada gambar dalam bahasa Indonesia. Baris pertama hanya jawabannya, " +
+                    "lalu baris baru berisi penjelasan maksimal 2 kalimat. Kalau ada beberapa soal, " +
+                    "tulis nomor dan jawabannya. Kalau tidak terbaca atau tidak ada soal, katakan saja " +
+                    "dengan singkat. Abaikan kotak abu-abu. Tanpa format markdown."
             )
         )
         val jpg = ByteArrayOutputStream()

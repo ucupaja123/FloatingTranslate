@@ -27,7 +27,8 @@
             android:name=".SoalActivity"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize|uiMode"
             android:exported="false"
-            android:label="Scan Soal" />
+            android:label="Scan Soal"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
 
         <service
             android:name=".SoalService"
