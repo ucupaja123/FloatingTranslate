@@ -73,6 +73,10 @@ class MainActivity : AppCompatActivity() {
             stopService(Intent(this, FloatingService::class.java))
         }
 
+        findViewById<Button>(R.id.btnCatur).setOnClickListener {
+            startActivity(Intent(this, CaturActivity::class.java))
+        }
+
         findViewById<Button>(R.id.btnSoal).setOnClickListener {
             startActivity(Intent(this, SoalActivity::class.java))
         }

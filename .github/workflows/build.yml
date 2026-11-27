@@ -37,6 +37,20 @@ jobs:
           echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
           echo "ANDROID_SDK_ROOT=$SDK_DIR" >> "$GITHUB_ENV"
 
+      - name: Download Stockfish (engine catur)
+        run: |
+          set -euo pipefail
+          fetch() {
+            arch="$1"; abi="$2"; sum="$3"
+            curl -sSfL -o "$RUNNER_TEMP/$arch.tar" \
+              "https://github.com/official-stockfish/Stockfish/releases/download/sf_17.1/stockfish-android-$arch.tar"
+            echo "$sum  $RUNNER_TEMP/$arch.tar" | sha256sum -c -
+            mkdir -p "app/src/main/jniLibs/$abi"
+            tar -xOf "$RUNNER_TEMP/$arch.tar" "stockfish/stockfish-android-$arch" > "app/src/main/jniLibs/$abi/libstockfish.so"
+          }
+          fetch armv8 arm64-v8a 634d8e7af7f776e641d909b49fa52e7f88e8ec3f18c0535ee63d564bf246ebcd
+          fetch armv7 armeabi-v7a f3234c85f07aa44453a17d53b1f5c8b964e52c1f37e37469440ed6fcef4daf04
+
       - name: Build debug APK
         run: gradle :app:assembleDebug --no-daemon
 

@@ -11,8 +11,16 @@ android {
         applicationId = "com.example.floatingtranslate"
         minSdk = 26
         targetSdk = 34
-        versionCode = 6
-        versionName = "6.0"
+        versionCode = 7
+        versionName = "7.0"
+    }
+
+    // Stockfish dijalankan sebagai program, jadi file-nya harus diekstrak saat instal.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+            keepDebugSymbols += "**/libstockfish.so"
+        }
     }
 
     buildTypes {
