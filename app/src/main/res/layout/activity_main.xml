@@ -22,8 +22,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="-24dp"
-            android:layout_marginBottom="32dp"
+            android:layout_marginBottom="12dp"
             android:text="Review Catur" />
+
+        <Button
+            android:id="@+id/btnCaturHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="32dp"
+            android:text="Hint Catur Langsung (AI)" />
 
         <TextView
             android:layout_width="match_parent"

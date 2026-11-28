@@ -77,6 +77,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, CaturActivity::class.java))
         }
 
+        findViewById<Button>(R.id.btnCaturHint).setOnClickListener {
+            startActivity(Intent(this, CaturHintActivity::class.java))
+        }
+
         findViewById<Button>(R.id.btnSoal).setOnClickListener {
             startActivity(Intent(this, SoalActivity::class.java))
         }

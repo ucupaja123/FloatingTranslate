@@ -16,16 +16,29 @@ object Gemini {
     private val MODELS = listOf("gemini-flash-lite-latest", "gemini-flash-latest")
     private const val BUSY = "Gagal: server AI lagi sibuk. Otomatis dicoba lagi."
 
+    private const val SOAL_PROMPT =
+        "Jawab soal pada gambar dalam bahasa Indonesia. Baris pertama hanya jawabannya, " +
+            "lalu baris baru berisi penjelasan maksimal 2 kalimat. Kalau ada beberapa soal, " +
+            "tulis nomor dan jawabannya. Kalau tidak terbaca atau tidak ada soal, katakan saja " +
+            "dengan singkat. Abaikan kotak abu-abu. Tanpa format markdown."
+
+    const val CATUR_PROMPT =
+        "Gambar ini papan catur. Baca posisi bidak dan tulis HANYA bagian penempatan bidak " +
+            "dari FEN (8 baris dipisah '/', dari baris 8 ke baris 1, huruf besar untuk putih, " +
+            "huruf kecil untuk hitam, angka untuk kotak kosong berurutan), dilihat dari sudut " +
+            "pandang pemain putih (a1 di kiri bawah). Satu baris saja, tanpa penjelasan, tanpa " +
+            "format markdown. Kalau papan catur tidak terlihat jelas, tulis saja: TIDAK_TERBACA."
+
     fun prefs(context: Context) = context.getSharedPreferences("soal", Context.MODE_PRIVATE)
 
     // Panggil dari thread latar. Selalu mengembalikan teks untuk ditampilkan.
-    fun ask(context: Context, bitmap: Bitmap): String {
+    fun ask(context: Context, bitmap: Bitmap, prompt: String = SOAL_PROMPT): String {
         val key = prefs(context).getString("key", "").orEmpty()
         if (key.isBlank()) return "Isi API key Gemini dulu di menu Scan Soal."
         var reply = BUSY
         for (model in MODELS) {
             reply = try {
-                request(key, model, bitmap) ?: continue
+                request(key, model, bitmap, prompt) ?: continue
             } catch (e: SocketTimeoutException) {
                 continue
             } catch (e: Exception) {
@@ -37,16 +50,8 @@ object Gemini {
     }
 
     // null berarti model ini sedang tidak bisa dipakai.
-    private fun request(key: String, model: String, bitmap: Bitmap): String? {
-        val parts = JSONArray().put(
-            JSONObject().put(
-                "text",
-                "Jawab soal pada gambar dalam bahasa Indonesia. Baris pertama hanya jawabannya, " +
-                    "lalu baris baru berisi penjelasan maksimal 2 kalimat. Kalau ada beberapa soal, " +
-                    "tulis nomor dan jawabannya. Kalau tidak terbaca atau tidak ada soal, katakan saja " +
-                    "dengan singkat. Abaikan kotak abu-abu. Tanpa format markdown."
-            )
-        )
+    private fun request(key: String, model: String, bitmap: Bitmap, prompt: String): String? {
+        val parts = JSONArray().put(JSONObject().put("text", prompt))
         val jpg = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.JPEG, 80, jpg)
         parts.put(

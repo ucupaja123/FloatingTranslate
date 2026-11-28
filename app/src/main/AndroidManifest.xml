@@ -38,8 +38,20 @@
             android:theme="@style/Theme.AppCompat.NoActionBar"
             android:windowSoftInputMode="adjustResize" />
 
+        <activity
+            android:name=".CaturHintActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|smallestScreenSize|uiMode"
+            android:exported="false"
+            android:label="Hint Catur"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
+
         <service
             android:name=".SoalService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+
+        <service
+            android:name=".CaturHintService"
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
 

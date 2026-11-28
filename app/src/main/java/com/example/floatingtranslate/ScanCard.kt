@@ -22,7 +22,9 @@ import kotlin.math.min
 class ScanCard(
     private val context: Context,
     private val onRescan: () -> Unit,
-    private val onStop: () -> Unit
+    private val onStop: () -> Unit,
+    private val startText: String = "Buka soalnya, jawaban muncul di sini.",
+    private val extraIcon: Pair<String, () -> Unit>? = null
 ) {
     enum class State { READY, THINKING, ERROR }
 
@@ -30,7 +32,7 @@ class ScanCard(
     private val root = FrameLayout(context)
     private val dot = View(context)
     private val status = label("Scan aktif", 12f, Ui.MUTED)
-    private val main = label("Buka soalnya, jawaban muncul di sini.", 14f, Ui.TEXT)
+    private val main = label(startText, 14f, Ui.TEXT)
     private val detail = label("", 13f, Ui.MUTED)
     private val bubble = label("AI", 14f, Ui.TEXT)
     private val card = LinearLayout(context)
@@ -74,6 +76,7 @@ class ScanCard(
         val header = LinearLayout(context).apply {
             gravity = Gravity.CENTER_VERTICAL
             addView(title, LinearLayout.LayoutParams(0, dp(32), 1f))
+            if (extraIcon != null) addView(icon(extraIcon.first) { extraIcon.second() })
             addView(icon("↻") { onRescan() })
             addView(icon("–") { collapse(true) })
             addView(icon("✕") { onStop() })

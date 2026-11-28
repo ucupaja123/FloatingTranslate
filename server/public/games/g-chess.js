@@ -1,6 +1,8 @@
 // ==================== CATUR 3D v3 (gaya chess.com) ====================
 // Lawan komputer (3 level), 2 pemain di satu HP, dan online melawan member lain.
 // Langkah online divalidasi di server (chess-online.js). Aturan ada di chess-rules.js.
+// Tombol Hint menghitung saran langkah secara lokal (bestMove dari chess-rules.js)
+// untuk giliran yang sedang jalan, lalu menyorot kotak asal & tujuan di papan.
 import { THREE } from "./engine.js";
 import { play } from "./sound.js";
 import { C, PROFILE, GLYPH, LEVEL_NAME, LEVELS, TIMES, HUMAN, isWhite, el, fresh, clone, fmt, captured, status, legal, applyMove, bestMove } from "./chess-rules.js";
@@ -33,6 +35,7 @@ export default {
   mount(e) {
     let cfg = { mode: "ai", level: 2, time: 600 }, draft = { ...cfg };
     let S = fresh(), hist = [], sel = null, moves = [], busy = false, gen = 0, info = null;
+    let hint = null, thinking = false;   // saran langkah (hint) untuk giliran manusia
     let clock = { w: Infinity, b: Infinity }, playing = false, ended = false, promoPending = null;
     let net = null;   // { sock, matchId, color, opp }
     let myName = "", presence = [], members = [], incoming = null, outgoing = null, lobbyNote = "";
@@ -145,6 +148,10 @@ export default {
         let mt = dark ? tm.dark : tm.light;
         if (S.last && (S.last.from === i || S.last.to === i)) mt = dark ? tm.lastD : tm.lastL;
         if (info && info.check && info.kingIdx === i) mt = tm.check;
+        if (hint) {
+          if (hint.fr * 8 + hint.fc === i) mt = tm.hint;
+          if (hint.m.row * 8 + hint.m.col === i) mt = tm.hintTo;
+        }
         if (sel && sel.r * 8 + sel.c === i) mt = tm.sel;
         t.material = mt;
       });
@@ -180,11 +187,12 @@ export default {
     const statusEl = el("div", "ch-status", "");
     const movesEl = el("div", "ch-moves", "");
     const undoB = mkBtn("↶ Undo", "", undo);
+    const hintB = mkBtn("💡 Hint", "ok", showHint);
     const resignB = mkBtn("🏳 Menyerah", "bad", resign);
     const newB = mkBtn("⚙ Menu", "hot", openSetup);
     topEl.append(topC.root, statusEl, movesEl);
     const actRow = el("div", "ch-row");
-    actRow.append(undoB, resignB, newB);
+    actRow.append(undoB, hintB, resignB, newB);
     botEl.append(botC.root, actRow);
     const setupEl = el("div", "ch-overlay"), lobbyEl = el("div", "ch-overlay");
     const chEl = el("div", "ch-overlay"), endEl = el("div", "ch-overlay"), promoEl = el("div", "ch-overlay");
@@ -229,11 +237,31 @@ export default {
         else if (info.stale) t = "Remis: pat";
         else if (isOnline()) t = S.turn === net.color ? "Giliran kamu" : `Menunggu ${net.opp}`;
         else if (cfg.mode === "ai" && S.turn !== HUMAN) t = "Komputer sedang berpikir…";
+        else if (thinking) t = "Mencari saran langkah…";
         else t = `Giliran ${S.turn === "w" ? "Putih" : "Hitam"}${info.check ? " · SKAK!" : ""}`;
         statusEl.textContent = t;
       }
       updateHUD();
       undoB.disabled = busy || !hist.length || isOnline();
+      hintB.disabled = busy || thinking || !playing || ended || modalOpen() || !humanTurn();
+    }
+
+    // Saran langkah untuk giliran manusia yang sedang jalan: dihitung secara lokal
+    // (bukan ke server), jadi aman dipakai di semua mode termasuk online.
+    function showHint() {
+      if (busy || thinking || !playing || ended || modalOpen() || !humanTurn()) return;
+      hint = null;
+      thinking = true;
+      refresh();
+      const g = gen;
+      e.later(30, () => {
+        const best = bestMove(S, 3, 0);
+        if (g !== gen) return;   // papan sudah berubah selagi menghitung
+        thinking = false;
+        hint = best ? { fr: best.fr, fc: best.fc, m: best.m } : null;
+        paint();
+        refresh();
+      });
     }
 
     // ----- pengaturan -----

@@ -12,7 +12,7 @@ export const START = [
   ["P", "P", "P", "P", "P", "P", "P", "P"],
   ["R", "N", "B", "Q", "K", "B", "N", "R"]
 ];
-export const C = { light: 0xeeeed2, dark: 0x769656, lastL: 0xf6f669, lastD: 0xbaca2b, sel: 0xf7ec6e, check: 0xe0474c };
+export const C = { light: 0xeeeed2, dark: 0x769656, lastL: 0xf6f669, lastD: 0xbaca2b, sel: 0xf7ec6e, check: 0xe0474c, hint: 0x5cc8ff, hintTo: 0x1864ab };
 export const VAL = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
 export const GLYPH = { K: "♔", Q: "♕", R: "♖", B: "♗", N: "♘", P: "♙", k: "♚", q: "♛", r: "♜", b: "♝", n: "♞", p: "♟" };
 export const LEVEL_NAME = { 1: "Mudah", 2: "Sedang", 4: "Sulit" };
